@@ -1,40 +1,50 @@
 #include <iostream>
-#include <list>
 #include <vector>
+#include <list>
 
 using namespace std;
 
 class Graph {
-    int V;
-    vector<list<int> > adj;
+private:
+    int V; 
+    std::vector<std::list<int> > adj; 
 
-    bool isCycleUtil(int v, vector<bool>& visited, int parent);
+    bool isCyclicUtil(int v, std::vector<bool>& visited, std::vector<int>& parent, int& cycleLength);
 
 public:
-    Graph(int V) {
-        this->V = V;
-        adj.resize(V);
-    }
-
-    void addEdge(int u, int v) {
-        adj[u].push_back(v);
-        adj[v].push_back(u);
-    }
-
-    bool isCycle();
-
+    Graph(int V);
+    void addEdge(int v, int w);
+    int getCycleLength();
+    
     bool isBipartite();
 };
 
-bool Graph::isCycleUtil(int v, vector<bool>& visited, int parent) {
+Graph::Graph(int V) {
+    this->V = V;
+    adj.resize(V);
+}
+
+void Graph::addEdge(int v, int w) {
+    adj[v].push_back(w);
+}
+
+bool Graph::isCyclicUtil(int v, std::vector<bool>& visited, std::vector<int>& parent, int& cycleLength) {
     visited[v] = true;
 
-    for(auto& i: adj[v]) {
-        if(!visited[i]) {
-            if(isCycleUtil(i, visited, parent)) {
+    for (const auto& i : adj[v]) {
+        if (!visited[i]) {
+            parent[i] = v;
+            if (isCyclicUtil(i, visited, parent, cycleLength))
                 return true;
+        } else if (parent[v] != i) {
+            cycleLength = 1;
+            int cur = v;
+
+            while (cur != i) {
+                cur = parent[cur];
+                cycleLength++;
             }
-        } else if( i != parent) {
+
             return true;
         }
     }
@@ -42,27 +52,27 @@ bool Graph::isCycleUtil(int v, vector<bool>& visited, int parent) {
     return false;
 }
 
-bool Graph::isCycle() {
-    vector<bool> visited(V, false);
+int Graph::getCycleLength() {
+    std::vector<bool> visited(V, false);
+    std::vector<int> parent(V, -1);
+    int cycleLength = 0;
 
-    for(int i = 0; i < V; i++) {
-        if(!visited[i]) {
-            if(isCycleUtil(i, visited, -1)) {
-                return true;
-            }
+    for (int i = 0; i < V; ++i) {
+        if (!visited[i]) {
+            if (isCyclicUtil(i, visited, parent, cycleLength))
+                return cycleLength;
         }
     }
 
-    return false;
+    return 0;
 }
 
 bool Graph::isBipartite() {
-
-    vector<int> color(V, -1);
+    std::vector<int> color(V, -1);
 
     for (int i = 0; i < V; ++i) {
         if (color[i] == -1) {
-            list<int> queue;
+            std::list<int> queue;
             queue.push_back(i);
             color[i] = 0;
 
@@ -72,7 +82,7 @@ bool Graph::isBipartite() {
 
                 for (const auto& v : adj[u]) {
                     if (color[v] == -1) {
-                        color[v] = 1 - color[u];
+                        color[v] = 1 - color[u]; 
                         queue.push_back(v);
                     } else if (color[v] == color[u]) {
                         return false;
@@ -81,28 +91,43 @@ bool Graph::isBipartite() {
             }
         }
     }
+
     return true;
 }
 
 int main() {
-    Graph gr(5);
+    
+    Graph g(5);
+    g.addEdge(0, 1);
+    g.addEdge(0, 2);
+    g.addEdge(1, 3);
+    g.addEdge(2, 4);
 
-    gr.addEdge(0, 1);
-    gr.addEdge(0, 2);
-    gr.addEdge(1, 3);
-    gr.addEdge(2, 4);
+    int cycleLength = g.getCycleLength();
+    
 
-    if(gr.isBipartite()) {
-        if(gr.isCycle()) {
-            cout << "Đồ thị là đồ thị hai màu và có chu trình lẻ." << endl;
+    if(g.isBipartite()) {
+        if(cycleLength >= 3 && cycleLength % 2 != 0) {
+            cout << "Do thi co hai mau va co chu trinh le" << endl;
         } else {
-            cout << "Đồ thị là đồ thị hai màu nhưng không có chu trình lẻ." << endl;
+            cout << "Do thi hai mau nhung khong co chu trinh le" << endl;
         }
-    } else {
-        if(gr.isCycle()) {
-            cout << "Đồ thị không phải đồ thị hai màu nhưng có chu trình lẻ." << endl;
+    }
+
+    Graph gr(5);
+    gr.addEdge(0, 1);
+    gr.addEdge(1, 2);
+    gr.addEdge(2, 0);
+    gr.addEdge(3, 0);
+    gr.addEdge(4, 3);
+
+    int cycleLength1 = gr.getCycleLength();
+
+    if(cycleLength1 >= 3 && cycleLength1 % 2 != 0) {
+        if(gr.isBipartite()) {
+            cout << "Do thi co hai mau va co chu trinh le" << endl;
         } else {
-            cout << "Đồ thị không phải đồ thị hai màu và không có chu trình lẻ." << endl;
+            cout << "Do thi khong phai do thi hai mau nhung co chu trinh le" << endl;
         }
     }
 
